@@ -6,8 +6,8 @@ const themeToggle = document.getElementById("theme-toggle");
 const body = document.body;
 
 // DeepSeek API 配置
-const apiKey = "你的DeepSeek_API_KEY"; // 替换为实际 API 密钥
-const apiEndpoint = "https://api.deepseek.ai/v1/chat"; // DeepSeek API 端点
+const apiKey = "sk-b1d61d37f2a84b72a9323a7c33815d20"; // 替换为实际 API 密钥
+const apiEndpoint = "https://api.deepseek.com/v1/chat"; // DeepSeek API 端点
 
 // 当前主题状态
 let isDarkMode = false;
