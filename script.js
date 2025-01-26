@@ -90,7 +90,7 @@ function sendMessage() {
 
     // 安全：API Key应该从安全存储获取
     const apiKey = 'sk-b1d61d37f2a84b72a9323a7c33815d20';
-    const endpoint = 'https://api.deepseek.com/v1';
+    const endpoint = 'https://api.deepseek.com/chat';
 
     fetch(endpoint, {
         method: 'POST',
