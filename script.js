@@ -92,7 +92,7 @@ function sendMessage() {
     }
 
     const apiKey = 'sk-b1d61d37f2a84b72a9323a7c33815d20';
-    const endpoint = 'https://api.deepseek.com/chat';
+    const endpoint = 'https://api.deepseek.com/v1';
 
     const payload = {
         model: "deepseek-reasoner",
@@ -107,7 +107,7 @@ function sendMessage() {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
+            'Authorization': `Bearer ${sk-b1d61d37f2a84b72a9323a7c33815d20}`
         },
         body: JSON.stringify(payload)
     })
