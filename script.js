@@ -1,160 +1,122 @@
-// 格式化消息文本
-function formatMessage(text) {
-    if (!text) return '';
-    
-    // 处理标题和换行
-    let lines = text.split('\n');
-    let formattedLines = lines.map(line => {
-        // 处理加粗文本（**文本**）
-        return line.replace(/\*\*(.*?)\*\*/g, '<span class="bold-text">$1</span>');
-    });
-    
-    // 处理段落分割
-    let processedText = formattedLines.join('\n');
-    return processedText
-        .split('###')
-        .filter(section => section.trim())
-        .map(section => {
-            let lines = section.split('\n').filter(line => line.trim());
-            if (!lines.length) return '';
+// 获取 DOM 元素
+const chatBox = document.getElementById("chat-box");
+const userInput = document.getElementById("user-input");
+const sendBtn = document.getElementById("send-btn");
+const themeToggle = document.getElementById("theme-toggle");
+const body = document.body;
 
-            return lines.map(line => {
-                line = line.trim();
-                
-                // 处理数字标题（如 "1."）
-                if (/^\d+\./.test(line)) {
-                    return `<p class="section-title">${line}</p >`;
-                }
-                
-                // 处理小标题（以破折号开头）
-                if (line.startsWith('-')) {
-                    const content = line.substring(1).trim();
-                    return `<p class="subsection"><span class="bold-text">${content}</span></p >`;
-                }
-                
-                // 处理带冒号的内容
-                const colonIndex = line.indexOf(':');
-                if (colonIndex !== -1) {
-                    const subtitle = line.substring(0, colonIndex).trim();
-                    const content = line.substring(colonIndex + 1).trim();
-                    return `<p><span class="subtitle">${subtitle}</span>: ${content}</p >`;
-                }
-                
-                // 普通段落
-                return `<p>${line}</p >`;
-            }).join('');
-        }).join('');
+// DeepSeek API 配置
+const apiKey = "你的DeepSeek_API_KEY"; // 替换为实际 API 密钥
+const apiEndpoint = "https://api.deepseek.ai/v1/chat"; // DeepSeek API 端点
+
+// 当前主题状态
+let isDarkMode = false;
+
+// 切换主题
+themeToggle.addEventListener("click", () => {
+    isDarkMode = !isDarkMode;
+    body.classList.toggle("dark-mode", isDarkMode);
+    themeToggle.textContent = isDarkMode ? "切换到浅色" : "切换到深色";
+});
+
+// 添加用户消息到聊天框
+function addUserMessage(message) {
+    const messageDiv = document.createElement("div");
+    messageDiv.className = "chat-message user-message";
+
+    const avatar = document.createElement("img");
+    avatar.src = "user-avatar.png";
+    avatar.alt = "User Avatar";
+    avatar.className = "avatar";
+
+    const text = document.createElement("div");
+    text.textContent = message;
+
+    messageDiv.appendChild(avatar);
+    messageDiv.appendChild(text);
+    chatBox.appendChild(messageDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// 显示消息（修复XSS漏洞）
-function displayMessage(role, message) {
-    const messagesContainer = document.getElementById('messages');
-    const messageElement = document.createElement('div');
-    messageElement.className = `message ${role}`;
-    
-    const avatar = document.createElement('img');
-    avatar.src = role === 'user' ? 'user-avatar.png' : 'bot-avatar.png';
-    avatar.alt = `${role} avatar`;
-    avatar.classList.add('avatar');
+// 添加 AI 消息到聊天框
+function addBotMessage(message) {
+    const messageDiv = document.createElement("div");
+    messageDiv.className = "chat-message bot-message";
 
-    const messageContent = document.createElement('div');
-    messageContent.className = 'message-content';
-    
-    // 安全处理消息内容
-    if (role === 'user') {
-        messageContent.textContent = message; // 使用textContent防止XSS
-    } else {
-        messageContent.innerHTML = formatMessage(message);
-    }
+    const avatar = document.createElement("img");
+    avatar.src = "bot-avatar.png";
+    avatar.alt = "Bot Avatar";
+    avatar.className = "avatar";
 
-    messageElement.append(avatar, messageContent);
-    messagesContainer.appendChild(messageElement);
-    
-    // 滚动时保持视口在底部
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    const text = document.createElement("div");
+    text.textContent = message;
+
+    messageDiv.appendChild(avatar);
+    messageDiv.appendChild(text);
+    chatBox.appendChild(messageDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// API调用相关改进
-function sendMessage() {
-    const inputElement = document.getElementById('chat-input');
-    const message = inputElement.value.trim();
+// 发送用户消息到 DeepSeek API
+async function sendMessage() {
+    const message = userInput.value.trim();
     if (!message) return;
 
-    displayMessage('user', message);
-    inputElement.value = '';
-    inputElement.focus();
+    // 显示用户消息
+    addUserMessage(message);
+    userInput.value = "";
 
-    // 改进的加载状态处理
-    const loadingElement = document.getElementById('loading');
-    loadingElement?.classList.add('visible');
+    // 显示加载状态
+    const loadingMessage = document.createElement("div");
+    loadingMessage.className = "chat-message bot-message";
 
-    // 安全：API Key应该从安全存储获取
-    const apiKey = 'sk-b1d61d37f2a84b72a9323a7c33815d20';
-    const endpoint = 'https://api.deepseek.com/chat';
+    const loadingAvatar = document.createElement("img");
+    loadingAvatar.src = "bot-avatar.png";
+    loadingAvatar.alt = "Bot Avatar";
+    loadingAvatar.className = "avatar";
 
-    fetch(endpoint, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ${apiKey}'
-        },
-        body: JSON.stringify({
-            model: "deepseek-reasoner",
-            messages: [
-                { role: "system", content: "You are a helpful assistant" },
-                { role: "user", content: "message" }
-            ],
-            stream: false
-        })
-    })
-    .then(response => {
-        if (!response.ok) throw new Error('HTTP error! status: ${response.status}');
-        return response.json();
-    })
-    .then(data => {
-        if (data.choices?.[0]?.message?.content) {
-            displayMessage('bot', data.choices[0].message.content);
+    const loadingText = document.createElement("div");
+    loadingText.textContent = "正在思考...";
+
+    loadingMessage.appendChild(loadingAvatar);
+    loadingMessage.appendChild(loadingText);
+    chatBox.appendChild(loadingMessage);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    try {
+        const response = await fetch(apiEndpoint, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+                prompt: message,
+                max_tokens: 100,
+            }),
+        });
+
+        const data = await response.json();
+        chatBox.removeChild(loadingMessage);
+
+        if (data.response) {
+            addBotMessage(data.response);
         } else {
-            throw new Error('Invalid response structure');
+            addBotMessage("抱歉，我无法理解您的问题。");
         }
-    })
-    .catch(error => {
-        console.error('API Error:', error);
-        displayMessage('bot', '服务暂时不可用，请稍后再试');
-    })
-    .finally(() => {
-        loadingElement?.classList.remove('visible');
-    });
+    } catch (error) {
+        chatBox.removeChild(loadingMessage);
+        addBotMessage("网络错误，请稍后再试。");
+        console.error("Error:", error);
+    }
 }
 
-// 主题切换功能优化
-function toggleTheme() {
-    document.body.classList.toggle('dark-mode');
-    localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
-}
+// 按钮点击事件
+sendBtn.addEventListener("click", sendMessage);
 
-// 初始化时加载主题设置
-document.addEventListener('DOMContentLoaded', () => {
-    document.body.classList.toggle('dark-mode', localStorage.getItem('darkMode') === 'true');
-});
-
-// 事件监听器改进
-document.getElementById('chat-input').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
+// 输入框按下 Enter 键事件
+userInput.addEventListener("keypress", (event) => {
+    if (event.key === "Enter") {
         sendMessage();
     }
-});
-
-// 下拉菜单改进
-document.querySelector('.dropdown').addEventListener('click', function(e) {
-    e.stopPropagation();
-    this.querySelector('.dropdown-content').classList.toggle('show');
-});
-
-// 点击任意位置关闭下拉菜单
-document.addEventListener('click', () => {
-    document.querySelectorAll('.dropdown-content.show').forEach(el => {
-        el.classList.remove('show');
-    });
 });
