@@ -90,25 +90,25 @@ function sendMessage() {
 
     // 安全：API Key应该从安全存储获取
     const apiKey = 'sk-b1d61d37f2a84b72a9323a7c33815d20';
-    const endpoint = 'https://api.deepseek.com/chat/completions';
+    const endpoint = 'https://api.deepseek.com/chat';
 
     fetch(endpoint, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
+            'Authorization': 'Bearer ${apiKey}'
         },
         body: JSON.stringify({
-            model: "deepseek-chat",
+            model: "deepseek-reasoner",
             messages: [
                 { role: "system", content: "You are a helpful assistant" },
-                { role: "user", content: message }
+                { role: "user", content: "message" }
             ],
             stream: false
         })
     })
     .then(response => {
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok) throw new Error('HTTP error! status: ${response.status}');
         return response.json();
     })
     .then(data => {
