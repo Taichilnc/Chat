@@ -92,22 +92,22 @@ function sendMessage() {
     }
 
     const apiKey = 'sk-b1d61d37f2a84b72a9323a7c33815d20';
-    const endpoint = 'https://api.deepseek.com/v1';
+    const baseurl = 'https://api.deepseek.com/v1';
 
     const payload = {
         model: "deepseek-reasoner",
         messages: [
             { role: "system", content: "You are a helpful assistant" },
-            { role: "user", content: message }
+            { role: "user", content: "message" },
         ],
         stream: false
     };
 
-    fetch(endpoint, {
+    fetch(baseurl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${sk-b1d61d37f2a84b72a9323a7c33815d20}`
+            'Authorization': 'Bearer ${apikey}'
         },
         body: JSON.stringify(payload)
     })
